@@ -1,14 +1,8 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import path, { join } from 'path'
+import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { ChildProcess, fork } from 'child_process'
-
-let openServer: ChildProcess
-
-function createServer(): void {
-  openServer = fork(path.join(__dirname, './server.js')) // 启动子线程
-}
+import createServer from './server'
 
 function createWindow(): void {
   // Create the browser window.
@@ -76,8 +70,6 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
-
-  if (openServer) openServer.kill() // 关闭子线程
 })
 
 // In this file you can include the rest of your app"s specific main process
