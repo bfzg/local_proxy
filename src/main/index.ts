@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import createServer from './server'
+import { createServer, restartServer } from './server'
 import { readFile, writeFile } from './fileManger'
 
 function createWindow(): void {
@@ -74,6 +74,7 @@ ipcMain.handle(
       const path = join(__dirname, filePath)
       console.log('写入的文件路径', path)
       await writeFile(path, content)
+      restartServer()
       return { status: 'success' }
     } catch (error: any) {
       return { status: 'error', error: error.message }

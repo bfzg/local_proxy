@@ -1,13 +1,39 @@
-import express from 'express'
+import express, { Express } from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
+import fs from 'fs'
+import path from 'path'
 
-const app = express()
+type ProxyItem = {
+  id: string
+  enable: boolean
+  matchUrl: string
+  target: string
+  isReplace: boolean
+  pathRewriteOrigin: string
+  pathRewriteTarget: string
+}
 
+let server: any // 用于存储服务器实例
+let app: Express // 保存 express 实例
+let proxyOptions: ProxyItem[] // 从配置中加载的代理选项
+
+const loadProxyConfig = (): ProxyItem[] => {
+  const configPath = path.resolve(__dirname, './config.json')
+  if (!fs.existsSync(configPath)) {
+    fs.writeFileSync(configPath, JSON.stringify([], null, 2), 'utf-8')
+    console.log('file is not exist,create config.json')
+  }
+  const configFile = fs.readFileSync(configPath, 'utf-8')
+  return JSON.parse(configFile)
+}
+
+// 创建并启动服务器的函数
 const createServer = (): void => {
-  app.set('port', '3001') //监听3000端口，地址为 http://localhost:3000
+  app = express()
+  app.set('port', '3001') // 设置端口
 
+  // 解决跨域问题的中间件
   app.all('*', function (req, res, next) {
-    // 解决跨域问题
     res.header('Access-Control-Allow-Origin', '*')
     res.header(
       'Access-Control-Allow-Headers',
@@ -21,32 +47,58 @@ const createServer = (): void => {
     }
   })
 
-  // 配置代理
-  app.use(
-    '/api',
-    createProxyMiddleware({
-      target: 'http://example.com', // 目标服务器
-      changeOrigin: true, // 更改请求头中的 `Host` 为目标 URL
-      pathRewrite: {
-        '^/api': '' // 重写路径，例如将 `/api/users` 重写为 `/users`
-      }
-    })
-  )
-
-  // 启动服务器
-  const server = app.listen(3001, () => {
-    console.log('Proxy server is running on http://localhost:3001')
+  // 使用加载的配置应用代理
+  proxyOptions.forEach((item) => {
+    if (!item.enable) return
+    app.use(
+      item.matchUrl,
+      createProxyMiddleware({
+        target: item.target,
+        changeOrigin: item.isReplace,
+        pathRewrite: {
+          [`^${item.matchUrl}`]: item.pathRewriteTarget
+        }
+      })
+    )
   })
 
-  // 如果使用 WebSocket，确保服务器实例也能处理 WebSocket 连接
-  server.on(
-    'upgrade',
-    createProxyMiddleware({
-      target: 'http://example.com', // 目标 WebSocket 服务器
-      changeOrigin: true,
-      ws: true // 启用 WebSocket 支持
-    }).upgrade
-  )
+  app.use('*', (_, res) => {
+    res.status(404).send('No matching proxy configuration found.')
+  })
+
+  // 启动服务器
+  server = app.listen(3001, () => {
+    console.log('server run http://localhost:3001')
+  })
+
+  // WebSocket 处理
+  // server.on(
+  //   'upgrade',
+  //   createProxyMiddleware({
+  //     target: proxyOptions.target,
+  //     changeOrigin: true,
+  //     ws: true
+  //   }).upgrade
+  // )
 }
 
-export default createServer
+// 重启服务器的函数
+const restartServer = (): void => {
+  if (server) {
+    server.close(() => {
+      console.log('server restart')
+      proxyOptions = loadProxyConfig() // 重新加载代理配置
+      createServer() // 重新启动服务器
+    })
+  } else {
+    console.log('no server create server')
+    proxyOptions = loadProxyConfig() // 初次加载代理配置
+    createServer() // 启动服务器
+  }
+}
+
+// 初次启动服务器
+proxyOptions = loadProxyConfig()
+
+// 导出重启函数以便在其他地方使用
+export { restartServer, createServer }
