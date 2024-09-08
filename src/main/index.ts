@@ -1,7 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
 import createServer from './server'
 import { readFile, writeFile } from './fileManger'
 
@@ -12,7 +11,6 @@ function createWindow(): void {
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -32,6 +30,7 @@ function createWindow(): void {
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    console.log('electron run >', process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -57,9 +56,11 @@ app.on('window-all-closed', () => {
   }
 })
 
-ipcMain.handle('readFile', async (_, filePath: string) => {
+ipcMain.handle('read-file', async (_, filePath: string) => {
   try {
-    const data = await readFile(filePath)
+    const path = join(__dirname, filePath)
+    console.log('读取的文件路径', path)
+    const data = await readFile(path)
     return { status: 'success', data }
   } catch (error: any) {
     return { status: 'error', error: error.message }
@@ -70,7 +71,9 @@ ipcMain.handle(
   'write-file',
   async (_, { filePath, content }: { filePath: string; content: string }) => {
     try {
-      await writeFile(filePath, content)
+      const path = join(__dirname, filePath)
+      console.log('写入的文件路径', path)
+      await writeFile(path, content)
       return { status: 'success' }
     } catch (error: any) {
       return { status: 'error', error: error.message }
