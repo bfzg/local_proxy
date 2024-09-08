@@ -1,7 +1,7 @@
 import express, { Express } from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import fs from 'fs'
-import path from 'path'
+import { getFilePath } from './utils/path'
 
 type ProxyItem = {
   id: string
@@ -18,11 +18,7 @@ let app: Express // 保存 express 实例
 let proxyOptions: ProxyItem[] // 从配置中加载的代理选项
 
 const loadProxyConfig = (): ProxyItem[] => {
-  const configPath = path.resolve(__dirname, './config.json')
-  if (!fs.existsSync(configPath)) {
-    fs.writeFileSync(configPath, JSON.stringify([], null, 2), 'utf-8')
-    console.log('file is not exist,create config.json')
-  }
+  const configPath = getFilePath('config.json')
   const configFile = fs.readFileSync(configPath, 'utf-8')
   return JSON.parse(configFile)
 }

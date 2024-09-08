@@ -49,13 +49,13 @@ const AddForm: React.FC<IAddForm> = forwardRef(({}, ref) => {
     e.preventDefault()
     // 提交表单
     let data: any = []
-    const dataArr = await window.electronAPI.readFile('./config.json')
+    const dataArr = await window.electronAPI.readFile('config.json')
     if (dataArr.data) {
       data = [...JSON.parse(dataArr.data), { ...formData, id: Date.now().toString() }]
     } else {
       data = [{ ...formData, id: Date.now().toString() }]
     }
-    window.electronAPI.writeFile('./config.json', JSON.stringify(data)).then(() => {
+    window.electronAPI.writeFile('config.json', JSON.stringify(data)).then(() => {
       handleClose()
     })
   }

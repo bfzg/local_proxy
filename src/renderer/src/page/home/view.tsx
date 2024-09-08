@@ -15,7 +15,7 @@ const View: React.FC = () => {
   }, [])
 
   const findData = () => {
-    window.electronAPI.readFile('./config.json').then((res) => {
+    window.electronAPI.readFile('config.json').then((res) => {
       const data = ParseJSON(res.data)
       console.log('>>>>', data)
       if (data) {

@@ -1,23 +1,14 @@
-import {
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
-  FormControlLabel,
-  IconButton,
-  Switch,
-  Typography
-} from '@mui/material'
+import { Card, CardContent, IconButton, Typography } from '@mui/material'
 import React from 'react'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { ParseJSON } from '@renderer/utils/json'
 const ProxyCard: React.FC<Proxys.ProxyItem> = (props) => {
   const handleRemove = async () => {
-    const dataArr = await window.electronAPI.readFile('./config.json')
+    const dataArr = await window.electronAPI.readFile('config.json')
     if (dataArr.data) {
       const data = ParseJSON(dataArr.data)
       const newData = data.filter((item) => item.id !== props.id)
-      window.electronAPI.writeFile('./config.json', JSON.stringify(newData)).then(() => {
+      window.electronAPI.writeFile('config.json', JSON.stringify(newData)).then(() => {
         console.log('删除成功')
       })
     }

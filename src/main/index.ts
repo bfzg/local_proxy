@@ -2,7 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { createServer, restartServer } from './server'
-import { readFile, writeFile } from './fileManger'
+import { readFile, writeFile } from './utils/file'
+import { getFilePath } from './utils/path'
 
 function createWindow(): void {
   // Create the browser window.
@@ -58,8 +59,8 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('read-file', async (_, filePath: string) => {
   try {
-    const path = join(__dirname, filePath)
-    console.log('读取的文件路径', path)
+    const path = getFilePath(filePath)
+    console.log('read file path >', path)
     const data = await readFile(path)
     return { status: 'success', data }
   } catch (error: any) {
@@ -71,8 +72,8 @@ ipcMain.handle(
   'write-file',
   async (_, { filePath, content }: { filePath: string; content: string }) => {
     try {
-      const path = join(__dirname, filePath)
-      console.log('写入的文件路径', path)
+      const path = getFilePath(filePath)
+      console.log('write file path >', path)
       await writeFile(path, content)
       restartServer()
       return { status: 'success' }
