@@ -16,6 +16,7 @@ module.exports = {
     'no-empty-pattern': 'off',
     'array-callback-return': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
-    'react/display-name': 'off'
+    'react/display-name': 'off',
+    'react/prop-types': 'off'
   }
 }

@@ -17,7 +17,6 @@ const View: React.FC = () => {
   const findData = () => {
     window.electronAPI.readFile('config.json').then((res) => {
       const data = ParseJSON(res.data)
-      console.log('>>>>', data)
       if (data) {
         setDataList(data)
       }
@@ -25,7 +24,18 @@ const View: React.FC = () => {
   }
 
   const onClickAdd = () => {
-    addFormRef.current?.openModal()
+    addFormRef.current?.openModal(false)
+  }
+
+  const handleRemove = async (id: string) => {
+    const dataArr = await window.electronAPI.readFile('config.json')
+    if (dataArr.data) {
+      const data = ParseJSON(dataArr.data)
+      const newData = data.filter((item) => item.id !== id)
+      window.electronAPI.writeFile('config.json', JSON.stringify(newData)).then(() => {
+        findData()
+      })
+    }
   }
 
   return (
@@ -41,11 +51,15 @@ const View: React.FC = () => {
       <Grid container spacing={4}>
         {dataList.map((item, index) => (
           <Grid key={item.matchUrl + index} size={{ xs: 12, md: 6, lg: 4, xl: 3 }}>
-            <ProxyCard {...item} />
+            <ProxyCard
+              {...item}
+              handleEdit={() => addFormRef.current?.openModal(true, item)}
+              handleRemove={() => handleRemove(item.id)}
+            />
           </Grid>
         ))}
       </Grid>
-      <AddForm ref={addFormRef} />
+      <AddForm onRefresh={findData} ref={addFormRef} />
     </div>
   )
 }

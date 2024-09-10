@@ -1,19 +1,14 @@
 import { Card, CardContent, IconButton, Typography } from '@mui/material'
 import React from 'react'
 import DeleteIcon from '@mui/icons-material/Delete'
-import { ParseJSON } from '@renderer/utils/json'
-const ProxyCard: React.FC<Proxys.ProxyItem> = (props) => {
-  const handleRemove = async () => {
-    const dataArr = await window.electronAPI.readFile('config.json')
-    if (dataArr.data) {
-      const data = ParseJSON(dataArr.data)
-      const newData = data.filter((item) => item.id !== props.id)
-      window.electronAPI.writeFile('config.json', JSON.stringify(newData)).then(() => {
-        console.log('删除成功')
-      })
-    }
-  }
+import BorderColorIcon from '@mui/icons-material/BorderColor'
 
+interface IProxyCard {
+  handleRemove: () => void
+  handleEdit: () => void
+}
+
+const ProxyCard: React.FC<Proxys.ProxyItem & IProxyCard> = (props) => {
   return (
     <Card className={`${props.enable ? '' : 'opacity-50'}`}>
       <CardContent className="flex justify-between align-middle items-center">
@@ -24,8 +19,17 @@ const ProxyCard: React.FC<Proxys.ProxyItem> = (props) => {
             重写格式: {props.pathRewriteOrigin} to {props.pathRewriteTarget}
           </Typography>
         </div>
-        <div>
-          <IconButton onClick={handleRemove}>
+        <div className="space-x-2">
+          <IconButton onClick={() => props.handleEdit()}>
+            <BorderColorIcon color="info" />
+          </IconButton>
+          <IconButton
+            onClick={() => {
+              if (window.confirm('你确定要删除这个项目吗？')) {
+                props.handleRemove()
+              }
+            }}
+          >
             <DeleteIcon color="error" />
           </IconButton>
         </div>

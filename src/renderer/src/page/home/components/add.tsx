@@ -1,24 +1,30 @@
 import { Button, Checkbox, Dialog, FormControlLabel, TextField, Typography } from '@mui/material'
 import React, { useState, forwardRef, useImperativeHandle } from 'react'
 import Grid from '@mui/material/Grid2'
+import { ParseJSON } from '@renderer/utils/json'
 
 export interface IAddFormFunc {
-  openModal: () => void
+  openModal: (isEdit: boolean, data?: Proxys.ProxyItem) => void
 }
 
 interface IAddForm {
+  onRefresh: () => void
   ref: any
 }
 
-const AddForm: React.FC<IAddForm> = forwardRef(({}, ref) => {
+const AddForm: React.FC<IAddForm> = forwardRef(({ onRefresh }, ref) => {
   useImperativeHandle(ref, () => ({
-    openModal: () => {
+    openModal: (isEdit: boolean, data?: Proxys.ProxyItem) => {
       setOpen(true)
+      setIsEdit(isEdit)
+      if (isEdit && data) {
+        setFormData(data)
+      }
     }
   }))
 
   const [open, setOpen] = useState(false)
-
+  const [isEdit, setIsEdit] = useState(false)
   // 定义表单状态
   const [formData, setFormData] = useState<Proxys.ProxyItem>({
     id: '',
@@ -45,8 +51,7 @@ const AddForm: React.FC<IAddForm> = forwardRef(({}, ref) => {
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     // 提交表单
     let data: any = []
     const dataArr = await window.electronAPI.readFile('config.json')
@@ -57,6 +62,25 @@ const AddForm: React.FC<IAddForm> = forwardRef(({}, ref) => {
     }
     window.electronAPI.writeFile('config.json', JSON.stringify(data)).then(() => {
       handleClose()
+    })
+  }
+
+  //编辑表单
+  const handleEdit = async () => {
+    // 提交表单
+    let data: any = []
+    const dataArr = ParseJSON((await window.electronAPI.readFile('config.json')).data)
+    if (formData.id) {
+      dataArr.forEach((item: Proxys.ProxyItem) => {
+        if (item.id === formData.id) {
+          item = formData
+        }
+        data.push(item)
+      })
+    }
+    window.electronAPI.writeFile('config.json', JSON.stringify(data)).then(() => {
+      handleClose()
+      onRefresh()
     })
   }
 
@@ -85,7 +109,16 @@ const AddForm: React.FC<IAddForm> = forwardRef(({}, ref) => {
       >
         <div className="p-3">
           <Typography variant="h5">添加匹配项</Typography>
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (isEdit) {
+                handleEdit()
+              } else {
+                handleSubmit()
+              }
+            }}
+          >
             <TextField
               label="匹配字段"
               name="matchUrl"
